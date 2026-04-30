@@ -30,19 +30,17 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 VALET_BASE = "https://www.bankofcanada.ca/valet"
 
-# Séries Valet visées (les V-series sont les codes CANSIM historiques, repris par Valet)
+# Séries Valet visées (identifiants modernes, vérifiés via /valet/observations)
 VALET_SERIES = {
     "GoC_2Y": "BD.CDN.2YR.DQ.YLD",   # rendement obligation gouvernement Canada 2 ans
     "GoC_10Y": "BD.CDN.10YR.DQ.YLD", # rendement obligation gouvernement Canada 10 ans
+    "GoC_5Y": "BD.CDN.5YR.DQ.YLD",   # rendement obligation gouvernement Canada 5 ans
     "USDCAD": "FXUSDCAD",            # taux de change quotidien USD/CAD
+    "OvernightTarget": "V39079",     # taux directeur cible
 }
 
-# Séries de fallback en cas d'échec (anciens identifiants V-)
-VALET_FALLBACK = {
-    "GoC_2Y": "V39051",
-    "GoC_10Y": "V39055",
-    "USDCAD": "FXUSDCAD",
-}
+# Pas de fallback : si une série échoue, on log et on continue.
+VALET_FALLBACK = {}
 
 START_DATE = "1994-01-01"
 END_DATE = date.today().isoformat()
@@ -74,24 +72,33 @@ def fetch_series(series_id: str, start: str = START_DATE, end: str = END_DATE) -
     return df.dropna(subset=["date"]).reset_index(drop=True)
 
 
-def fetch_with_fallback(label: str, primary: str, fallback: str) -> pd.DataFrame:
+def fetch_with_fallback(label: str, primary: str, fallback: str | None) -> pd.DataFrame | None:
     try:
         df = fetch_series(primary)
         print(f"  {label} : {len(df)} obs via {primary}")
         return df
     except Exception as e:
+        if not fallback:
+            print(f"  {label} : échec {primary} ({e}), abandon")
+            return None
         print(f"  {label} : échec {primary} ({e}), tentative {fallback}")
-        df = fetch_series(fallback)
-        print(f"  {label} : {len(df)} obs via {fallback}")
-        return df
+        try:
+            df = fetch_series(fallback)
+            print(f"  {label} : {len(df)} obs via {fallback}")
+            return df
+        except Exception as e2:
+            print(f"  {label} : échec aussi sur fallback ({e2})")
+            return None
 
 
 def main() -> None:
     print(f"Récupération des séries Valet ({START_DATE} à {END_DATE})")
     long_frames = []
     for label, primary in VALET_SERIES.items():
-        fallback = VALET_FALLBACK.get(label, primary)
+        fallback = VALET_FALLBACK.get(label)
         df = fetch_with_fallback(label, primary, fallback)
+        if df is None:
+            continue
         df["series"] = label
         long_frames.append(df[["date", "series", "value"]])
         time.sleep(0.5)
