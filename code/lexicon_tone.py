@@ -22,36 +22,63 @@ Usage prévu :
 
 HAWKISH_EN = {
     # actions de resserrement
-    "raise rates", "increase rates", "hike", "tighten", "tightening",
+    "raise rates", "raising target", "increase rates", "increased target",
+    "hike", "tighten", "tightening", "tightened", "quantitative tightening",
     "remove accommodation", "reduce stimulus", "withdraw stimulus",
+    "higher interest rates", "higher interest rate",
     # vocabulaire d'inflation
     "inflation pressure", "inflation pressures", "inflationary pressure",
     "inflationary pressures", "above target", "elevated inflation",
-    "persistent inflation", "broad-based price increases",
+    "persistent inflation", "broad-based price increases", "broad-based inflation",
     "overheating", "excess demand", "capacity pressures",
+    "supply disruptions", "supply chain disruptions",
+    "inflation becomes entrenched", "entrenched inflation",
+    "price pressures", "wage pressures", "wage growth strong",
     # croissance forte
     "strong growth", "robust growth", "solid expansion",
-    "tight labour market", "tight labor market", "wage pressures",
+    "tight labour market", "tight labor market", "labour markets tight",
+    "labour market tight", "labor market tight", "wage pressures",
+    "financial conditions tightened",
     # forward guidance restrictif
     "further increases", "additional tightening", "policy needs to be more restrictive",
-    "rates need to rise", "monetary policy will need to tighten",
+    "rates need to rise", "rates may need to rise",
+    "monetary policy will need to tighten", "interest rates need to rise",
+    "need to rise further", "additional rate increases",
+    "more restrictive", "further tightening", "policy needs to be restrictive",
 }
 
 DOVISH_EN = {
     # actions d'assouplissement
-    "cut rates", "lower rates", "reduce rates", "ease", "easing",
+    "cut rates", "cut the rate", "lower rates", "lower the rate",
+    "lowered the target", "reduced target", "reduce target",
+    "reduce the target", "decided to reduce", "decided to lower",
+    "reduce rates", "lower interest rates", "ease", "easing",
     "accommodative", "stimulative", "supportive policy",
+    "effective lower bound", "lower bound",
     # vocabulaire de croissance faible
     "weak growth", "subdued growth", "slowing economy", "economic slack",
-    "downside risks", "elevated uncertainty", "weakness", "soft demand",
-    "deteriorating", "contracting", "contraction", "recession",
+    "excess supply", "excess capacity",
+    "downside risks", "downside risk", "risks to the downside",
+    "elevated uncertainty", "heightened uncertainty",
+    "uncertainty has increased", "more-than-usual uncertainty",
+    "weakness", "weakening", "weakened", "softening", "softened",
+    "soft demand", "soft growth", "weaker growth",
+    "deteriorating", "deteriorated", "contracting", "contraction", "recession",
+    "weighs on", "weigh on", "weighing on", "weighed on",
+    "slow the pace", "slowing pace", "slowed in recent months",
+    # tensions commerciales (BdC contemporain)
+    "trade tensions", "trade conflict", "trade war", "tariff", "tariffs",
     # désinflation
     "below target", "subdued inflation", "weak price pressures",
     "easing inflation", "disinflation", "inflation moderating",
     "inflation expected to ease", "inflation has slowed",
+    "inflation close to target", "inflation back to target",
+    "inflation easing", "easing of inflation", "moderating inflation",
     # forward guidance accommodant
-    "further cuts", "additional easing", "policy needs to remain accommodative",
-    "support the economy", "more easing may be required",
+    "further cuts", "further reduction", "further easing", "additional easing",
+    "additional cuts", "more easing may be required",
+    "policy needs to remain accommodative", "support the economy",
+    "support to the economy", "more support",
 }
 
 # ---------- FRANÇAIS ----------
