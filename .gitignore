@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Données lourdes ou non publiables
+data/raw/large/
+data/processed/cache/
+*.parquet.bak
+
+# Secrets et clés API
+.env
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editeurs
+.vscode/
+.idea/
+*.swp
+
+# LaTeX (au cas où on passe en LaTeX plus tard)
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
