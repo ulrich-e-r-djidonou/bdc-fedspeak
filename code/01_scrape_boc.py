@@ -5,11 +5,11 @@ Scrape les communiqués de presse de décision de taux directeur (FAD,
 Fixed Announcement Dates) de la Banque du Canada.
 
 URL pattern : https://www.bankofcanada.ca/YYYY/MM/fad-press-release-YYYY-MM-DD/
+Source de la liste : sitemap WordPress de bankofcanada.ca (couverture 2009 à présent).
 
 Usage :
     python 01_scrape_boc.py --mode test          # 5 communiqués récents
-    python 01_scrape_boc.py --mode full          # toutes pages d'index
-    python 01_scrape_boc.py --mode full --max-pages 90
+    python 01_scrape_boc.py --mode full          # tous les communiqués FAD du sitemap
 
 Sortie :
     data/raw/boc_press_releases.csv
@@ -21,7 +21,6 @@ import argparse
 import csv
 import re
 import time
-from datetime import datetime
 from pathlib import Path
 
 import requests
@@ -32,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_RAW = ROOT / "data" / "raw"
 DATA_RAW.mkdir(parents=True, exist_ok=True)
 
-INDEX_URL = "https://www.bankofcanada.ca/press/press-releases/"
+SITEMAP_PATTERN = "https://www.bankofcanada.ca/wp-sitemap-posts-post-{n}.xml"
 USER_AGENT = (
     "Mozilla/5.0 (academic-research; bdc-fedspeak; "
     "contact: ulrich.djidonou@gmail.com)"
@@ -40,30 +39,24 @@ USER_AGENT = (
 HEADERS = {"User-Agent": USER_AGENT}
 SLEEP_BETWEEN = 0.6  # secondes, pour rester poli avec le serveur BdC
 
-
-def fetch_index_page(page: int) -> str:
-    url = INDEX_URL if page == 1 else f"{INDEX_URL}page/{page}/"
-    r = requests.get(url, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    return r.text
+FAD_URL_RE = re.compile(
+    r"https://www\.bankofcanada\.ca/\d{4}/\d{2}/fad-press-release-\d{4}-\d{2}-\d{2}/"
+)
 
 
-def extract_fad_urls(html: str) -> list[str]:
-    """Renvoie tous les liens vers des communiqués FAD trouvés dans la page d'index."""
-    soup = BeautifulSoup(html, "html.parser")
-    urls = []
-    for a in soup.find_all("a", href=True):
-        href = a["href"]
-        if "fad-press-release" in href and href.startswith("http"):
-            urls.append(href.rstrip("/") + "/")
-    # déduplique en préservant l'ordre
-    seen = set()
-    deduped = []
-    for u in urls:
-        if u not in seen:
-            seen.add(u)
-            deduped.append(u)
-    return deduped
+def fetch_all_fad_urls() -> list[str]:
+    """Parcourt les sitemaps de posts de la BdC et extrait les URLs de communiqués FAD."""
+    urls: set[str] = set()
+    for n in range(1, 20):  # arrêt automatique sur 404
+        url = SITEMAP_PATTERN.format(n=n)
+        r = requests.get(url, headers=HEADERS, timeout=30)
+        if r.status_code == 404:
+            break
+        r.raise_for_status()
+        urls.update(FAD_URL_RE.findall(r.text))
+        time.sleep(SLEEP_BETWEEN)
+    # tri chronologique via la date dans l'URL
+    return sorted(urls, key=lambda u: re.search(r"(\d{4})-(\d{2})-(\d{2})/$", u).group(0))
 
 
 def parse_release(url: str) -> dict:
@@ -116,44 +109,22 @@ def parse_release(url: str) -> dict:
     }
 
 
-def collect_urls(max_pages: int) -> list[str]:
-    all_urls: list[str] = []
-    for page in tqdm(range(1, max_pages + 1), desc="index"):
-        try:
-            html = fetch_index_page(page)
-        except Exception as e:
-            print(f"\nerreur page {page} : {e}")
-            continue
-        page_urls = extract_fad_urls(html)
-        if not page_urls:
-            print(f"\npage {page} sans FAD : arrêt anticipé")
-            break
-        all_urls.extend(page_urls)
-        time.sleep(SLEEP_BETWEEN)
-    seen = set()
-    deduped = []
-    for u in all_urls:
-        if u not in seen:
-            seen.add(u)
-            deduped.append(u)
-    return deduped
-
-
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--mode", choices=["test", "full"], default="test")
-    p.add_argument("--max-pages", type=int, default=85)
     p.add_argument("--limit", type=int, default=5, help="mode test : nombre de communiqués")
     args = p.parse_args()
 
+    print("Récupération de la liste des communiqués FAD via sitemap...")
+    all_urls = fetch_all_fad_urls()
+    print(f"{len(all_urls)} URLs FAD trouvées (couverture {all_urls[0][-11:-1]} à {all_urls[-1][-11:-1]})")
+
     if args.mode == "test":
-        print("Mode test : récupération des 5 communiqués FAD les plus récents")
-        html = fetch_index_page(1)
-        urls = extract_fad_urls(html)[: args.limit]
+        # 5 communiqués récents
+        urls = all_urls[-args.limit:]
         out_name = "boc_press_releases_sample.csv"
     else:
-        print(f"Mode full : index complet jusqu'à {args.max_pages} pages")
-        urls = collect_urls(args.max_pages)
+        urls = all_urls
         out_name = "boc_press_releases.csv"
 
     print(f"{len(urls)} URLs à parser")
