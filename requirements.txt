@@ -1,5 +1,10 @@
-requests>=2.32
-beautifulsoup4>=4.12
-pandas>=2.0
-tqdm>=4.66
-python-dateutil>=2.9
+requests>=2.32,<3
+beautifulsoup4>=4.12,<5
+# 06_plot_tone.py trace les figures : matplotlib manquait alors qu'il est
+# necessaire pour executer la chaine complete.
+matplotlib>=3.8,<4
+# Bornes hautes volontaires : une version majeure retire des API sans
+# preavis (pandas 3 a supprime Series.last(), qui a casse un autre depot).
+pandas>=2.0,<3
+tqdm>=4.66,<5
+python-dateutil>=2.9,<3

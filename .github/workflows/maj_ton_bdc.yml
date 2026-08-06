@@ -1,0 +1,68 @@
+name: Mise a jour indice de ton
+
+# La Banque du Canada publie huit decisions de taux par an, a dates fixes
+# mais irregulieres. Deux passages par mois bornent le retard a environ deux
+# semaines apres une annonce, sans rescanner le sitemap toutes les semaines
+# pour rien : entre deux decisions, il n'y a simplement rien de nouveau.
+
+on:
+  schedule:
+    - cron: "0 9 5,20 * *"
+  workflow_dispatch: {}
+
+jobs:
+  ton:
+    runs-on: ubuntu-latest
+
+    # Le dernier pas repousse les donnees et les figures regenerees. Sans
+    # cette permission, le jeton du run est en lecture seule et le push
+    # termine sur un 403 apres un calcul pourtant reussi.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dependances
+        run: pip install -r requirements.txt
+
+      - name: Recuperer les communiques
+        working-directory: code
+        run: python 01_scrape_boc.py --mode full
+
+      - name: Nettoyer les textes
+        working-directory: code
+        run: python 02_clean_text.py
+
+      - name: Attacher le taux directeur
+        working-directory: code
+        run: python 02b_merge_rates.py
+
+      - name: Construire l'indice de ton
+        working-directory: code
+        run: python 03_tone_index.py
+
+      - name: Recuperer les series de marche
+        working-directory: code
+        run: python 04_market_data.py
+
+      - name: Tracer les figures
+        working-directory: code
+        run: python 06_plot_tone.py
+
+      # Une figure absente ou vide passerait autrement inapercue : le commit
+      # suivant ne verrait aucun changement et le run finirait en succes.
+      - name: Verifier que les figures ont ete produites
+        run: python code/verifier_figures.py
+
+      - name: Publier les donnees et les figures
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/ article/figures/
+          git diff --cached --quiet || git commit -m "Mise a jour automatique : communiques, indice de ton et figures [$(date -u +%Y-%m-%d)]"
+          git push
